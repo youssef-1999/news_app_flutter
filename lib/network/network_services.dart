@@ -1,28 +1,41 @@
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:news_app/model/article_response_model/article.dart';
+import 'package:news_app/model/article_response_model/article_response_model.dart';
 import 'package:news_app/model/source_model.dart';
 import 'package:news_app/network/consts.dart';
 import 'package:news_app/network/endpoint.dart';
 
 class NetworkServices {
-static Future<List<Sources>?> getSources(String category) async{
-   Dio dio=Dio(BaseOptions(
-    baseUrl: Consts.baseUrl,queryParameters: {
-      'apiKey': Consts.APIKEY,
-      'category': category,
-    }));
-  Response response = await  dio.get(Endpoint.sources,queryParameters: {
+  static final Dio _dio = Dio(BaseOptions(baseUrl: Consts.baseUrl));
+
+  static Future<List<Sources>?> getSources(String category) async {
+    final response = await _dio.get(Endpoint.sources, queryParameters: {
       'apiKey': Consts.APIKEY,
       'category': category,
     });
+    debugPrint("---> $response.data.toString()  $category");
 
-    if(response.statusCode==200 && response.data!=null && response.data['status'].toLowerCase()=='ok'){
-      sourceModel sourcesModel = sourceModel.fromJson(response.data);
-      return sourcesModel.sources;
-
-
+    if (response.data?['status'] == 'ok') {
+      return sourceModel.fromJson(response.data).sources;
     }
-    else log('Error: ${response.statusCode}');
-}
+    log('Error: ${response.statusCode}');
+    return null;
+  }
+
+  static Future<List<Article>?> getArticles(String sourceId) async {
+    final response = await _dio.get(Endpoint.articles, queryParameters: {
+      'sources': sourceId,
+      'apiKey': Consts.APIKEY,
+    });
+    debugPrint("---> ${response.data}  $sourceId");
+
+    if (response.data?['status'] == 'ok') {
+      return ArticleResponseModel.fromMap(response.data).articles;
+    }
+    log('Error: ${response.statusCode}');
+    return null;
+  }
 }
