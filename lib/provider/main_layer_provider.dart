@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:news_app/common/error/error_model.dart';
 import 'package:news_app/enums/news_category.dart';
 import 'package:news_app/model/article_response_model/article.dart';
 import 'package:news_app/model/source_model.dart';
@@ -40,16 +41,18 @@ class MainLayerProvider extends ChangeNotifier {
     isSourcesLoading = true;
     sourcesError = null;
     notifyListeners();
-    try {
-      if(selectedCategory!=null){
-       List<Sources>? response =await   NetworkServices.getSources(selectedCategory!.name);
-       sources = response;
+    if (selectedCategory != null) {
+      final (ErrorModel? error, List<Sources>? data) =
+          await NetworkServices.getSources(selectedCategory!.name);
+      if (error != null) {
+        sources = null;
+        sourcesError = error.message;
+        debugPrint('getSources error: $sourcesError');
+      } else {
+        sources = data;
       }
-    } catch (e) {
-      sourcesError = _errorMessage(e);
-      debugPrint('getSources error: $sourcesError');
     }
-     isSourcesLoading = false;
+    isSourcesLoading = false;
      notifyListeners();
 
     // Load articles for the first tab
