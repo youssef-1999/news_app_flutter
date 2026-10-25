@@ -41,17 +41,32 @@ class NetworkServices {
     }
   }
 
-  static Future<List<Article>?> getArticles(String sourceId) async {
-    final response = await _dio.get(Endpoint.articles, queryParameters: {
-      'sources': sourceId,
-      'apiKey': Consts.APIKEY,
-    });
-    debugPrint("---> ${response.data}  $sourceId");
+  static Future<(ErrorModel?, List<Article>?)> getArticles(String sourceId) async {
+    try {
+      final response = await _dio.get(Endpoint.articles, queryParameters: {
+        'sources': sourceId,
+        'apiKey': Consts.APIKEY,
+      });
+      debugPrint("---> ${response.data}  $sourceId");
 
-    if (response.data?['status'] == 'ok') {
-      return ArticleResponseModel.fromMap(response.data).articles;
+      if (response.data?['status'] == 'ok') {
+        return (null, ArticleResponseModel.fromMap(response.data).articles);
+      }
+      final data = response.data;
+      return (
+        GeneralError(
+          errorMessage: data is Map ? data['message'] as String? : null,
+          errorCode: data is Map ? data['code'] as String? : null,
+        ),
+        null,
+      );
+    } on DioException catch (e) {
+      final ErrorModel error = ErrorModel.fromDioException(e);
+      log('Error: ${error.message} (${error.errorCode})');
+      return (error, null);
+    } catch (e) {
+      log('Error: $e');
+      return (TypeParseError(errorMessage: e.toString()), null);
     }
-    log('Error: ${response.statusCode}');
-    return null;
   }
 }

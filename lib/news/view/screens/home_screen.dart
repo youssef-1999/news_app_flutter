@@ -5,14 +5,13 @@ import 'package:news_app/common/extensions/context_extension.dart';
 import 'package:news_app/common/extensions/widget_extension.dart';
 import 'package:news_app/enums/news_category.dart';
 import 'package:news_app/gen/assets.gen.dart';
-import 'package:news_app/news/modal/network/network_services.dart';
 import 'package:news_app/news/view_modal/provider/main_layer_provider.dart';
 import 'package:news_app/news/view/screens/general_screen.dart';
 import 'package:news_app/themes/app_colors.dart';
 import 'package:news_app/news/view/widgets/custom_drawer.dart';
 import 'package:provider/provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   static const routeName = '/home-screen';
   const HomeScreen({super.key});
 
@@ -37,28 +36,16 @@ class HomeScreen extends StatefulWidget {
   ];
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-    for (final category in NewsCategory.values) {
-      NetworkServices.getSources(category.name);
-    }
-  }
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Cards use the opposite theme so they stand out from the scaffold
-    final images = isDark ? HomeScreen._lightImages : HomeScreen._darkImages;
+    final images = isDark ? _lightImages : _darkImages;
     final cardBgColor = isDark ? AppColors.lightBgColor : AppColors.darkBgColor;
     final cardTextColor =
         isDark ? AppColors.darkTextColor : AppColors.lightTextColor;
 
     return ChangeNotifierProvider(
-      create:(BuildContext context) => MainLayerProvider(),
+      create:(BuildContext context) => MainLayerProvider()..prefetchSources(),
       child: Consumer<MainLayerProvider>(
         builder: (context, provider, _) {
           final selectedCategory = provider.selectedCategory;

@@ -19,7 +19,6 @@ class GeneralScreen extends StatefulWidget {
 class _GeneralScreenState extends State<GeneralScreen>
     with TickerProviderStateMixin {
   TabController? _tabController;
-  List<Sources> _sources = [];
 
   @override
   void initState() {
@@ -32,7 +31,6 @@ class _GeneralScreenState extends State<GeneralScreen>
 
   // Recreate the controller when the number of sources changes
   void _syncTabController(List<Sources> sources) {
-    _sources = sources;
     if (_tabController?.length == sources.length) return;
     final old = _tabController;
     _tabController = TabController(length: sources.length, vsync: this)
@@ -45,13 +43,8 @@ class _GeneralScreenState extends State<GeneralScreen>
 
   // Fires on both tab taps and swipes
   void _onTabChanged() {
-    final index = _tabController!.index;
-    if (index >= _sources.length) return;
-    final sourceId = _sources[index].id;
-    final provider = Provider.of<MainLayerProvider>(context, listen: false);
-    if (sourceId != null && sourceId != provider.selectedSourceId) {
-      provider.getArticles(sourceId);
-    }
+    Provider.of<MainLayerProvider>(context, listen: false)
+        .onSourceSelected(_tabController!.index);
   }
 
   @override

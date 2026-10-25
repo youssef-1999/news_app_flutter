@@ -36,7 +36,10 @@ sealed class ErrorModel {
         return GeneralError(errorMessage: "bad certificate");
 
       case DioExceptionType.unknown:
-        return GeneralError(errorMessage: exception.message);
+        // The real cause (SocketException, HandshakeException, ...) is only in error
+        return GeneralError(
+          errorMessage: exception.message ?? exception.error?.toString(),
+        );
     }
   }
 }

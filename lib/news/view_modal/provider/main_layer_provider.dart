@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:news_app/common/error/error_model.dart';
 import 'package:news_app/enums/news_category.dart';
@@ -6,6 +5,8 @@ import 'package:news_app/news/modal/model/article_response_model/article.dart';
 import 'package:news_app/news/modal/model/source_model.dart';
 import 'package:news_app/news/modal/network/network_services.dart';
 
+// The bridge between View and Model: views only talk to this class,
+// and only this class talks to NetworkServices
 class MainLayerProvider extends ChangeNotifier {
   NewsCategory? selectedCategory;
   List <Sources>? sources;
@@ -16,16 +17,11 @@ class MainLayerProvider extends ChangeNotifier {
   String? articlesError;
   String? sourcesError;
 
-  // NewsAPI puts the real reason (e.g. rateLimited, apiKeyInvalid) in the body
-  String _errorMessage(Object e) {
-    if (e is DioException) {
-      final data = e.response?.data;
-      if (data is Map && data['message'] != null) return data['message'];
-      // For DioExceptionType.unknown the real cause (SocketException,
-      // HandshakeException, ...) is only in e.error
-      return e.message ?? e.error?.toString() ?? e.type.name;
+  // Warm up the sources requests for every category when Home opens
+  void prefetchSources() {
+    for (final category in NewsCategory.values) {
+      NetworkServices.getSources(category.name);
     }
-    return e.toString();
   }
 
   void setSelectedCategory(NewsCategory category) {
@@ -37,7 +33,8 @@ class MainLayerProvider extends ChangeNotifier {
     selectedCategory = null;
     notifyListeners();
   }
-  getSources()async {
+
+  Future<void> getSources() async {
     isSourcesLoading = true;
     sourcesError = null;
     notifyListeners();
@@ -62,21 +59,29 @@ class MainLayerProvider extends ChangeNotifier {
     }
   }
 
-  getArticles(String sourceId) async {
+  // Called by the view on tab taps and swipes
+  void onSourceSelected(int index) {
+    final sourceId = sources?.elementAtOrNull(index)?.id;
+    if (sourceId != null && sourceId != selectedSourceId) {
+      getArticles(sourceId);
+    }
+  }
+
+  Future<void> getArticles(String sourceId) async {
     selectedSourceId = sourceId;
     isArticlesLoading = true;
     articles = null;
     articlesError = null;
     notifyListeners();
-    try {
-      List<Article>? response = await NetworkServices.getArticles(sourceId);
-      // Ignore the result if the user switched to another tab meanwhile
-      if (selectedSourceId != sourceId) return;
-      articles = response;
-    } catch (e) {
-      debugPrint('getArticles error: ${_errorMessage(e)}');
-      if (selectedSourceId != sourceId) return;
-      articlesError = _errorMessage(e);
+    final (ErrorModel? error, List<Article>? data) =
+        await NetworkServices.getArticles(sourceId);
+    // Ignore the result if the user switched to another tab meanwhile
+    if (selectedSourceId != sourceId) return;
+    if (error != null) {
+      articlesError = error.message;
+      debugPrint('getArticles error: $articlesError');
+    } else {
+      articles = data;
     }
     isArticlesLoading = false;
     notifyListeners();
