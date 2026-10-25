@@ -4,7 +4,7 @@ import 'package:news_app/common/app_text_styles.dart';
 import 'package:news_app/common/extensions/widget_extension.dart';
 import 'package:news_app/themes/app_colors.dart';
 import 'package:news_app/themes/app_theme.dart';
-import 'package:news_app/widgets/custom_dropdown.dart';
+import 'package:news_app/news/view/widgets/custom_dropdown.dart';
 
 
 class CustomDrawer extends StatelessWidget {

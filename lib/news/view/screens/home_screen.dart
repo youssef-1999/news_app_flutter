@@ -5,11 +5,11 @@ import 'package:news_app/common/extensions/context_extension.dart';
 import 'package:news_app/common/extensions/widget_extension.dart';
 import 'package:news_app/enums/news_category.dart';
 import 'package:news_app/gen/assets.gen.dart';
-import 'package:news_app/network/network_services.dart';
-import 'package:news_app/provider/main_layer_provider.dart';
-import 'package:news_app/screens/general_screen.dart';
+import 'package:news_app/news/modal/network/network_services.dart';
+import 'package:news_app/news/view_modal/provider/main_layer_provider.dart';
+import 'package:news_app/news/view/screens/general_screen.dart';
 import 'package:news_app/themes/app_colors.dart';
-import 'package:news_app/widgets/custom_drawer.dart';
+import 'package:news_app/news/view/widgets/custom_drawer.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {

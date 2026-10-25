@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:news_app/common/app_text_styles.dart';
 import 'package:news_app/enums/news_category.dart';
-import 'package:news_app/model/source_model.dart';
-import 'package:news_app/provider/main_layer_provider.dart';
-import 'package:news_app/widgets/custom_drawer.dart';
-import 'package:news_app/widgets/news_card.dart';
+import 'package:news_app/news/modal/model/source_model.dart';
+import 'package:news_app/news/view_modal/provider/main_layer_provider.dart';
+import 'package:news_app/news/view/widgets/custom_drawer.dart';
+import 'package:news_app/news/view/widgets/news_card.dart';
 import 'package:provider/provider.dart';
 
 class GeneralScreen extends StatefulWidget {

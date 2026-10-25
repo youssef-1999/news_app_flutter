@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:news_app/common/error/error_model.dart';
 import 'package:news_app/enums/news_category.dart';
-import 'package:news_app/model/article_response_model/article.dart';
-import 'package:news_app/model/source_model.dart';
-import 'package:news_app/network/network_services.dart';
+import 'package:news_app/news/modal/model/article_response_model/article.dart';
+import 'package:news_app/news/modal/model/source_model.dart';
+import 'package:news_app/news/modal/network/network_services.dart';
 
 class MainLayerProvider extends ChangeNotifier {
   NewsCategory? selectedCategory;
