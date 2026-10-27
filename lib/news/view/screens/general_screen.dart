@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:news_app/common/app_text_styles.dart';
 import 'package:news_app/enums/news_category.dart';
 import 'package:news_app/news/modal/model/source_model.dart';
-import 'package:news_app/news/view_modal/provider/main_layer_provider.dart';
+import 'package:news_app/news/view_modal/main_layer_cubit/main_layer_cubit.dart';
+import 'package:news_app/news/view_modal/main_layer_cubit/main_layer_state.dart';
 import 'package:news_app/news/view/widgets/custom_drawer.dart';
 import 'package:news_app/news/view/widgets/news_card.dart';
-import 'package:provider/provider.dart';
 
 class GeneralScreen extends StatefulWidget {
   static const routeName = '/general_screen';
@@ -19,15 +20,7 @@ class GeneralScreen extends StatefulWidget {
 class _GeneralScreenState extends State<GeneralScreen>
     with TickerProviderStateMixin {
   TabController? _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    // Fetch sources for the selected category
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<MainLayerProvider>(context, listen: false).getSources();
-    });
-  }
+  List<Sources> get _sources => context.read<MainLayerCubit>().sources;
 
   // Recreate the controller when the number of sources changes
   void _syncTabController(List<Sources> sources) {
@@ -43,8 +36,12 @@ class _GeneralScreenState extends State<GeneralScreen>
 
   // Fires on both tab taps and swipes
   void _onTabChanged() {
-    Provider.of<MainLayerProvider>(context, listen: false)
-        .onSourceSelected(_tabController!.index);
+    // A tap fires this twice (during and after the animation); only react once
+    if (_tabController!.indexIsChanging) return;
+    final sourceId = _sources[_tabController!.index].id;
+    if (sourceId != null) {
+      context.read<MainLayerCubit>().getArticles(sourceId);
+    }
   }
 
   @override
@@ -55,60 +52,61 @@ class _GeneralScreenState extends State<GeneralScreen>
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<MainLayerProvider>(context);
-    final sources = provider.sources ?? [];
-    _syncTabController(sources);
+    return BlocBuilder<MainLayerCubit, MainLayerState>(
+      builder: (context, state) {
+        _syncTabController(_sources);
 
-    // Back button returns to Home by clearing the selected category
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
-          Provider.of<MainLayerProvider>(
-            context,
-            listen: false,
-          ).clearSelectedCategory();
-        }
+        // Back button returns to Home by clearing the selected category
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) {
+              context.read<MainLayerCubit>().clearCategory();
+            }
+          },
+          child: Scaffold(
+            drawer: const CustomDrawer(),
+            appBar: AppBar(
+              centerTitle: true,
+              title: Text(widget.category.title,
+                  style: AppTextStyles.styleW500s20()),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    // Open search
+                  },
+                ),
+              ],
+              bottom: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                tabs: _sources
+                    .map((source) => Tab(text: source.name ?? ''))
+                    .toList(),
+              ),
+            ),
+            body: state is GetSourcesLoading || state is SelectedCategoryState
+                ? const Center(child: CircularProgressIndicator())
+                : state is GetSourcesError
+                    ? Center(
+                        child: Text(state.message ?? 'Something went wrong'))
+                    : TabBarView(
+                        controller: _tabController,
+                        children: _sources
+                            .map((source) => _ArticlesList(sourceId: source.id))
+                            .toList(),
+                      ),
+          ),
+        );
       },
-      child: Scaffold(
-        drawer: const CustomDrawer(),
-        appBar: AppBar(
-          centerTitle: true,
-          title: Text(widget.category.title, style: AppTextStyles.styleW500s20()),
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                // Open search
-              },
-            ),
-          ],
-          bottom: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: sources
-                .map((source) => Tab(text: source.name ?? ''))
-                .toList(),
-          ),
-        ),
-        body: provider.isSourcesLoading
-            ? const Center(child: CircularProgressIndicator())
-            : provider.sourcesError != null
-                ? Center(child: Text(provider.sourcesError!))
-                : TabBarView(
-                    controller: _tabController,
-                    children: sources
-                        .map((source) => _ArticlesList(sourceId: source.id))
-                        .toList(),
-                  ),
-      ),
     );
   }
 }
@@ -119,22 +117,25 @@ class _ArticlesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<MainLayerProvider>(context);
-    // The provider only holds the articles of the currently selected tab
-    if (provider.selectedSourceId != sourceId || provider.isArticlesLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (provider.articlesError != null) {
-      return Center(child: Text(provider.articlesError!));
-    }
-    final articles = provider.articles ?? [];
-    if (articles.isEmpty) {
-      return const Center(child: Text('No articles found'));
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: articles.length,
-      itemBuilder: (context, index) => NewsCard(article: articles[index]),
+    return BlocBuilder<MainLayerCubit, MainLayerState>(
+      builder: (context, state) {
+        if (state is GetArticlesError && state.sourceId == sourceId) {
+          return Center(child: Text(state.message ?? 'Something went wrong'));
+        }
+        // The cubit only holds the articles of the currently selected tab
+        if (state is! GetArticlesSuccess || state.sourceId != sourceId) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state.articles.isEmpty) {
+          return const Center(child: Text('No articles found'));
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: state.articles.length,
+          itemBuilder: (context, index) =>
+              NewsCard(article: state.articles[index]),
+        );
+      },
     );
   }
 }

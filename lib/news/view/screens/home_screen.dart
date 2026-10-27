@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:news_app/common/app_text_styles.dart';
 import 'package:news_app/common/extensions/context_extension.dart';
 import 'package:news_app/common/extensions/widget_extension.dart';
 import 'package:news_app/enums/news_category.dart';
 import 'package:news_app/gen/assets.gen.dart';
-import 'package:news_app/news/view_modal/provider/main_layer_provider.dart';
+import 'package:news_app/news/view_modal/main_layer_cubit/main_layer_cubit.dart';
+import 'package:news_app/news/view_modal/main_layer_cubit/main_layer_state.dart';
+import 'package:news_app/news/modal/model/data_source/main_layer_data_source.dart';
+import 'package:news_app/news/repository/main_layer_repository.dart';
 import 'package:news_app/news/view/screens/general_screen.dart';
 import 'package:news_app/themes/app_colors.dart';
 import 'package:news_app/news/view/widgets/custom_drawer.dart';
-import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
   static const routeName = '/home-screen';
@@ -44,11 +47,14 @@ class HomeScreen extends StatelessWidget {
     final cardTextColor =
         isDark ? AppColors.darkTextColor : AppColors.lightTextColor;
 
-    return ChangeNotifierProvider(
-      create:(BuildContext context) => MainLayerProvider()..prefetchSources(),
-      child: Consumer<MainLayerProvider>(
-        builder: (context, provider, _) {
-          final selectedCategory = provider.selectedCategory;
+    return BlocProvider(
+      create: (context) => MainLayerCubit(
+        mainLayerRepository:
+            MainLayerRepository(dataSource: MainLayerRemoteDataSource()),
+      ),
+      child: BlocBuilder<MainLayerCubit, MainLayerState>(
+        builder: (context, state) {
+          final selectedCategory = state.selectedCategory;
           if (selectedCategory != null) {
             return GeneralScreen(category: selectedCategory);
           }
@@ -136,10 +142,7 @@ class HomeScreen extends StatelessWidget {
                                       clipBehavior: Clip.antiAlias,
                                       child: InkWell(
                                         onTap: () {
-                                          Provider.of<MainLayerProvider>(
-                                            context,
-                                            listen: false,
-                                          ).setSelectedCategory(
+                                          context.read<MainLayerCubit>().selectCategory(
                                             NewsCategory.values[index],
                                           );
                                         },
