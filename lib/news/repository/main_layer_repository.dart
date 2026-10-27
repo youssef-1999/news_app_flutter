@@ -1,8 +1,9 @@
+import 'package:injectable/injectable.dart';
 import 'package:news_app/common/error/error_model.dart';
 import 'package:news_app/news/modal/model/article_response_model/article.dart';
 import 'package:news_app/news/modal/model/data_source/main_layer_data_source.dart';
 import 'package:news_app/news/modal/model/source_model.dart';
-
+@injectable
 class MainLayerRepository {
   final MainLayerDataSource _network_sevices;
 

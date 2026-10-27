@@ -6,10 +6,10 @@ import 'package:news_app/common/extensions/context_extension.dart';
 import 'package:news_app/common/extensions/widget_extension.dart';
 import 'package:news_app/enums/news_category.dart';
 import 'package:news_app/gen/assets.gen.dart';
+import 'package:news_app/news/service_locator/di.dart';
+import 'package:news_app/news/service_locator/service_locator.dart';
 import 'package:news_app/news/view_modal/main_layer_cubit/main_layer_cubit.dart';
 import 'package:news_app/news/view_modal/main_layer_cubit/main_layer_state.dart';
-import 'package:news_app/news/modal/model/data_source/main_layer_data_source.dart';
-import 'package:news_app/news/repository/main_layer_repository.dart';
 import 'package:news_app/news/view/screens/general_screen.dart';
 import 'package:news_app/themes/app_colors.dart';
 import 'package:news_app/news/view/widgets/custom_drawer.dart';
@@ -48,10 +48,7 @@ class HomeScreen extends StatelessWidget {
         isDark ? AppColors.darkTextColor : AppColors.lightTextColor;
 
     return BlocProvider(
-      create: (context) => MainLayerCubit(
-        mainLayerRepository:
-            MainLayerRepository(dataSource: MainLayerRemoteDataSource()),
-      ),
+      create: (context) => getIt<MainLayerCubit>(),
       child: BlocBuilder<MainLayerCubit, MainLayerState>(
         builder: (context, state) {
           final selectedCategory = state.selectedCategory;

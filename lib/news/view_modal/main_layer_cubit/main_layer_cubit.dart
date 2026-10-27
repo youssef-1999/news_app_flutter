@@ -1,11 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 import 'package:news_app/common/error/error_model.dart';
 import 'package:news_app/news/modal/model/article_response_model/article.dart';
 import 'package:news_app/news/modal/model/source_model.dart';
 import 'package:news_app/news/repository/main_layer_repository.dart';
 import 'package:news_app/news/view_modal/main_layer_cubit/main_layer_state.dart';
 import 'package:news_app/enums/news_category.dart';
-
+@injectable
 class MainLayerCubit extends Cubit<MainLayerState> {
   final MainLayerRepository _mainLayerRepository;
   MainLayerCubit({required this._mainLayerRepository})
